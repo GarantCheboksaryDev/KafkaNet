@@ -118,7 +118,7 @@ namespace KaffkaNet
                         {
                             try
                             {
-                                Log(logpath, string.Format("{0}Обработка сообщения: {1}.", prefix, cr.Offset));
+                                Log(logpath, string.Format("{0}Обработка сообщения: {1}.", prefix, cr.Offset.Value));
 
                                 ResponseMessages messageResponse = new ResponseMessages();
 
@@ -126,7 +126,7 @@ namespace KaffkaNet
                                 messageResponse.MessageId = cr.Offset.Value.ToString();
                                 messageResponse.Value = cr.Message.Value;
 
-                                Log(logpath, string.Format("{0}Сообщение с Id: {1} успешно обработано.", prefix, cr.Offset));
+                                Log(logpath, string.Format("{0}Сообщение с Id: {1} успешно обработано.", prefix, cr.Offset.Value));
 
                                 consumer.StoreOffset(cr);
 
@@ -134,7 +134,7 @@ namespace KaffkaNet
                             }
                             catch (ConsumeException ex)
                             {
-                                Log(logpath, string.Format("{0}Во время обработки сообщения с Id: {1} произошла ошибка {2}.", prefix, cr.Offset, ex.Error));
+                                Log(logpath, string.Format("{0}Во время обработки сообщения с Id: {1} произошла ошибка {2}.", prefix, cr.Offset.Value, ex.Error));
                             }
 
                         }
