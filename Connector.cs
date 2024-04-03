@@ -100,7 +100,6 @@ namespace KaffkaNet
                 {
                     Log(logpath, string.Format("{0}Ошибка подключения: {1}", prefix, e.Reason));
                     return;
-
                 }
                 )
                 .Build())
