@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32510.428
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KaffkaNet", "KaffkaNet.csproj", "{06D80507-4D7E-4461-90E1-CF03568BE37D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestClient", "..\TestClient\TestClient.csproj", "{7E1D815E-3A8F-47BF-8343-14DD9FC47C48}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{06D80507-4D7E-4461-90E1-CF03568BE37D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06D80507-4D7E-4461-90E1-CF03568BE37D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06D80507-4D7E-4461-90E1-CF03568BE37D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06D80507-4D7E-4461-90E1-CF03568BE37D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E1D815E-3A8F-47BF-8343-14DD9FC47C48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E1D815E-3A8F-47BF-8343-14DD9FC47C48}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E1D815E-3A8F-47BF-8343-14DD9FC47C48}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E1D815E-3A8F-47BF-8343-14DD9FC47C48}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FB8EE8B2-6AF8-40CE-A525-C54731626597}
+	EndGlobalSection
+EndGlobal
