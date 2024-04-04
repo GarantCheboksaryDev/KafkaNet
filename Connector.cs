@@ -31,6 +31,7 @@ namespace KaffkaNet
         public string MessageId;
         public DateTime Created;
         public string Value;
+        public string Key;
 
         public ResponseMessages()
         {
@@ -121,10 +122,15 @@ namespace KaffkaNet
                                 Log(logpath, string.Format("{0}Обработка сообщения: {1}.", prefix, cr.Offset.Value));
 
                                 ResponseMessages messageResponse = new ResponseMessages();
-
-                                messageResponse.Created = cr.Message.Timestamp.UtcDateTime;
-                                messageResponse.MessageId = cr.Offset.Value.ToString();
-                                messageResponse.Value = cr.Message.Value;
+                                if (cr.Message.Key != null)
+                                {
+                                    messageResponse.Created = cr.Message.Timestamp.UtcDateTime;
+                                    messageResponse.MessageId = cr.Offset.Value.ToString();
+                                    messageResponse.Value = cr.Message.Value;
+                                    messageResponse.Key = cr.Message.Key.ToString();
+                                }
+                                else
+                                    throw new Exception(string.Format("{0}Сообщение с Id: {1} не содержит уникальный ключ", prefix, cr.Offset.Value));
 
                                 Log(logpath, string.Format("{0}Сообщение с Id: {1} успешно обработано.", prefix, cr.Offset.Value));
 
