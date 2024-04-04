@@ -47,17 +47,19 @@ namespace KaffkaNet
 
     public class Connector
     {
-        private readonly string BootstrapServers;
-        private readonly string UserName;
-        private readonly string Password;
-        private readonly string ConsumerGroupId;
+        public string BootstrapServers;
+        public string UserName;
+        public string Password;
+        public string ConsumerGroupId;
+        public string LogPath;
 
-        public Connector(string bootstrapServers, string userName, string password, string consumerGroupId)
+        public Connector(string bootstrapServers, string userName, string password, string consumerGroupId, string logPath)
         {
             BootstrapServers = bootstrapServers;
             UserName = userName;
             Password = password;
             ConsumerGroupId = consumerGroupId;
+            LogPath = logPath;
         }
 
         /// <summary>
@@ -65,18 +67,20 @@ namespace KaffkaNet
         /// </summary>
         /// <param name="connectSettings">Настройки подключения.</param>
         /// <param name="topic">Наименование топика.</param>
-        /// <param name="logpath">Путь к логфайлам.</param>
         /// <returns>Структурированный ответ.</returns>
-        public Response ReadMessagesFromTopic(Connector connectSettings, string topic, string logpath)
+        public Response ReadMessagesFromTopic(Connector connectSettings, string topic)
         {
             Response response = new Response();
 
             response.Topic = topic;
 
+            var logpath = connectSettings.LogPath;
+
             List<ResponseMessages> messagesResponse = new List<ResponseMessages>();
 
             var prefix = string.Format("ReadMessagesFromTopic. Topic: {0}. ", topic);
 
+           
             Log(logpath, string.Format("{0}Старт процесса.", prefix));
 
             var config = new ConsumerConfig
