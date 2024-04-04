@@ -31,7 +31,7 @@ namespace KaffkaNet
         public string MessageId;
         public DateTime Created;
         public string Value;
-        public string Key;
+        public  string Key;
 
         public ResponseMessages()
         {
@@ -39,9 +39,9 @@ namespace KaffkaNet
 
         public ResponseMessages(string messageId, DateTime created, string value)
         {
-            MessageId = messageId;
-            Created = created;
-            Value = value;
+            this.MessageId = messageId;
+            this.Created = created;
+            this.Value = value;
         }
     }
 
@@ -55,11 +55,11 @@ namespace KaffkaNet
 
         public Connector(string bootstrapServers, string userName, string password, string consumerGroupId, string logPath)
         {
-            BootstrapServers = bootstrapServers;
-            UserName = userName;
-            Password = password;
-            ConsumerGroupId = consumerGroupId;
-            LogPath = logPath;
+            this.BootstrapServers = bootstrapServers;
+            this.UserName = userName;
+            this.Password = password;
+            this.ConsumerGroupId = consumerGroupId;
+            this.LogPath = logPath;
         }
 
         /// <summary>
