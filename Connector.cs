@@ -10,22 +10,6 @@ using System.Collections.Generic;
 
 namespace KaffkaNet
 {
-    public class Response
-    {
-        public string Topic;
-        public List<ResponseMessages> Messages;
-
-        public Response()
-        {
-        }
-
-        public Response(string topic, List<ResponseMessages> messages)
-        {
-            Topic = topic;
-            Messages = messages;
-        }
-    }
-
     public class ResponseMessages
     {
         public string MessageId;
@@ -68,12 +52,8 @@ namespace KaffkaNet
         /// <param name="connectSettings">Настройки подключения.</param>
         /// <param name="topic">Наименование топика.</param>
         /// <returns>Структурированный ответ.</returns>
-        public Response ReadMessagesFromTopic(Connector connectSettings, string topic)
+        public List<ResponseMessages> ReadMessagesFromTopic(Connector connectSettings, string topic)
         {
-            Response response = new Response();
-
-            response.Topic = topic;
-
             var logpath = connectSettings.LogPath;
 
             List<ResponseMessages> messagesResponse = new List<ResponseMessages>();
@@ -94,13 +74,14 @@ namespace KaffkaNet
                 MessageMaxBytes = 1000000000,
                 ReceiveMessageMaxBytes = 1850000000,
                 SecurityProtocol = SecurityProtocol.Plaintext,
-                AutoOffsetReset = AutoOffsetReset.Earliest,
-                EnableAutoOffsetStore = false,
+                AutoOffsetReset = AutoOffsetReset.Latest,
                 MaxPollIntervalMs = 10000,
-                SessionTimeoutMs = 10000
+                SessionTimeoutMs = 10000,
+                EnableAutoCommit = true,
+                EnableAutoOffsetStore = false
             };
 
-            using (var consumer = new ConsumerBuilder<Ignore, string>(config)
+            using (var consumer = new ConsumerBuilder<string, string>(config)
                 .SetErrorHandler((_, e) =>
                 {
                     Log(logpath, string.Format("{0}Ошибка подключения: {1}", prefix, e.Reason));
@@ -126,15 +107,10 @@ namespace KaffkaNet
                                 Log(logpath, string.Format("{0}Обработка сообщения: {1}.", prefix, cr.Offset.Value));
 
                                 ResponseMessages messageResponse = new ResponseMessages();
-                                if (cr.Message.Key != null)
-                                {
-                                    messageResponse.Created = cr.Message.Timestamp.UtcDateTime;
-                                    messageResponse.MessageId = cr.Offset.Value.ToString();
-                                    messageResponse.Value = cr.Message.Value;
-                                    messageResponse.Key = cr.Message.Key.ToString();
-                                }
-                                else
-                                    throw new Exception(string.Format("{0}Сообщение с Id: {1} не содержит уникальный ключ", prefix, cr.Offset.Value));
+                                messageResponse.Created = cr.Message.Timestamp.UtcDateTime;
+                                messageResponse.MessageId = cr.Offset.Value.ToString();
+                                messageResponse.Value = cr.Message.Value;
+                                messageResponse.Key = cr.Message.Key != null ? cr.Message.Key.ToString() : string.Empty;
 
                                 Log(logpath, string.Format("{0}Сообщение с Id: {1} успешно обработано.", prefix, cr.Offset.Value));
 
@@ -164,9 +140,7 @@ namespace KaffkaNet
                 Log(logpath, string.Format("{0}Конец процесса.", prefix));
             }
 
-            response.Messages = messagesResponse;
-
-            return response;
+            return messagesResponse;
         }
 
         /// <summary>
