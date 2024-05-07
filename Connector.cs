@@ -7,6 +7,7 @@ using Confluent.Kafka;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace KaffkaNet
 {
@@ -81,6 +82,20 @@ namespace KaffkaNet
                 EnableAutoOffsetStore = false
             };
 
+            if (!Library.IsLoaded)
+            {
+                var pathToLibrd = string.Empty;
+                if (GetOperatingSystem() == OSPlatform.Windows)
+                    pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                        $"librdkafka\\{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}\\librdkafka.dll");
+                else if (GetOperatingSystem() == OSPlatform.Linux)
+                    pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                        $"librdkafka/linux/librdkafka.so");
+                Log(logpath, $"librdkafka is not loaded. Trying to load {pathToLibrd}");
+                Library.Load(pathToLibrd);
+                Log(logpath, $"Using librdkafka version: {Library.Version}");
+            }
+
             using (var consumer = new ConsumerBuilder<string, string>(config)
                 .SetErrorHandler((_, e) =>
                 {
@@ -152,6 +167,7 @@ namespace KaffkaNet
         public bool CheckConnection(Connector connectSettings, string topic)
         {
             var connect = true;
+            var logpath = connectSettings.LogPath;
 
             var config = new ConsumerConfig
             {
@@ -166,6 +182,20 @@ namespace KaffkaNet
                 MaxPollIntervalMs = 10000,
                 SessionTimeoutMs = 10000
             };
+
+            if (!Library.IsLoaded)
+            {
+                var pathToLibrd = string.Empty;
+                if (GetOperatingSystem() == OSPlatform.Windows)
+                pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                    $"librdkafka\\{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}\\librdkafka.dll");
+                else if (GetOperatingSystem() == OSPlatform.Linux)
+                    pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                        $"librdkafka/linux/librdkafka.so");
+                Log(logpath, $"librdkafka is not loaded. Trying to load {pathToLibrd}");
+                Library.Load(pathToLibrd);
+                Log(logpath, $"Using librdkafka version: {Library.Version}");
+            }
 
             using (var consumer = new ConsumerBuilder<Ignore, string>(config)
                 .SetErrorHandler((_, e) =>
@@ -219,6 +249,26 @@ namespace KaffkaNet
                     Console.WriteLine(string.Format("Log error: {0}", ex));
                 }
             }
+        }
+
+        public static OSPlatform GetOperatingSystem()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return OSPlatform.OSX;
+            }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return OSPlatform.Linux;
+            }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return OSPlatform.Windows;
+            }
+
+            throw new Exception("Cannot determine operating system!");
         }
     }
 
