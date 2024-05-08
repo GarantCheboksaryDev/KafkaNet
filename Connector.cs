@@ -90,7 +90,7 @@ namespace KaffkaNet
                         $"librdkafka\\{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}\\librdkafka.dll");
                 else if (GetOperatingSystem() == OSPlatform.Linux)
                     pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
-                        $"librdkafka/linux/librdkafka.so");
+                        $"librdkafka/linux/librdkafka.so") + char.MinValue;
                 Log(logpath, $"librdkafka is not loaded. Trying to load {pathToLibrd}");
                 Library.Load(pathToLibrd);
                 Log(logpath, $"Using librdkafka version: {Library.Version}");
