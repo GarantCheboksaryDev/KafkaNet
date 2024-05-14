@@ -16,7 +16,7 @@ namespace KaffkaNet
         public string MessageId;
         public DateTime Created;
         public string Value;
-        public  string Key;
+        public string Key;
 
         public ResponseMessages()
         {
@@ -61,7 +61,6 @@ namespace KaffkaNet
 
             var prefix = string.Format("ReadMessagesFromTopic. Topic: {0}. ", topic);
 
-           
             Log(logpath, string.Format("{0}Старт процесса.", prefix));
 
             var config = new ConsumerConfig
@@ -75,7 +74,7 @@ namespace KaffkaNet
                 MessageMaxBytes = 1000000000,
                 ReceiveMessageMaxBytes = 1850000000,
                 SecurityProtocol = SecurityProtocol.Plaintext,
-                AutoOffsetReset = AutoOffsetReset.Latest,
+                AutoOffsetReset = AutoOffsetReset.Earliest,
                 MaxPollIntervalMs = 10000,
                 SessionTimeoutMs = 10000,
                 EnableAutoCommit = true,
@@ -90,7 +89,7 @@ namespace KaffkaNet
                         $"librdkafka\\{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}\\librdkafka.dll");
                 else if (GetOperatingSystem() == OSPlatform.Linux)
                     pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
-                        $"librdkafka/linux/librdkafka.so") + char.MinValue;
+                        $"librdkafka/linux/librdkafka.so");
                 Log(logpath, $"librdkafka is not loaded. Trying to load {pathToLibrd}");
                 Library.Load(pathToLibrd);
                 Log(logpath, $"Using librdkafka version: {Library.Version}");
@@ -105,8 +104,9 @@ namespace KaffkaNet
                 )
                 .Build())
             {
+                
                 consumer.Subscribe(topic);
-
+                
                 try
                 {
                     while (true)
@@ -187,8 +187,8 @@ namespace KaffkaNet
             {
                 var pathToLibrd = string.Empty;
                 if (GetOperatingSystem() == OSPlatform.Windows)
-                pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
-                    $"librdkafka\\{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}\\librdkafka.dll");
+                    pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                        $"librdkafka\\{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}\\librdkafka.dll");
                 else if (GetOperatingSystem() == OSPlatform.Linux)
                     pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
                         $"librdkafka/linux/librdkafka.so");
@@ -213,7 +213,7 @@ namespace KaffkaNet
                 consumer.Consume(TimeSpan.FromMilliseconds(interval));
             }
 
-           return connect;
+            return connect;
         }
 
         /// <summary>
@@ -271,5 +271,4 @@ namespace KaffkaNet
             throw new Exception("Cannot determine operating system!");
         }
     }
-
 }
