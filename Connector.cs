@@ -85,14 +85,13 @@ namespace KaffkaNet
             {
                 var pathToLibrd = string.Empty;
                 if (GetOperatingSystem() == OSPlatform.Windows)
+                {
                     pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
                         $"librdkafka\\{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}\\librdkafka.dll");
-                else if (GetOperatingSystem() == OSPlatform.Linux)
-                    pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
-                        $"librdkafka/linux/librdkafka.so");
-                Log(logpath, $"librdkafka is not loaded. Trying to load {pathToLibrd}");
-                Library.Load(pathToLibrd);
-                Log(logpath, $"Using librdkafka version: {Library.Version}");
+                    Log(logpath, $"librdkafka is not loaded. Trying to load {pathToLibrd}");
+                    Library.Load(pathToLibrd);
+                    Log(logpath, $"Using librdkafka version: {Library.Version}");
+                }
             }
 
             using (var consumer = new ConsumerBuilder<string, string>(config)
@@ -187,14 +186,13 @@ namespace KaffkaNet
             {
                 var pathToLibrd = string.Empty;
                 if (GetOperatingSystem() == OSPlatform.Windows)
+                {
                     pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
                         $"librdkafka\\{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}\\librdkafka.dll");
-                else if (GetOperatingSystem() == OSPlatform.Linux)
-                    pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
-                        $"librdkafka/linux/librdkafka.so");
-                Log(logpath, $"librdkafka is not loaded. Trying to load {pathToLibrd}");
-                Library.Load(pathToLibrd);
-                Log(logpath, $"Using librdkafka version: {Library.Version}");
+                    Log(logpath, $"librdkafka is not loaded. Trying to load {pathToLibrd}");
+                    Library.Load(pathToLibrd);
+                    Log(logpath, $"Using librdkafka version: {Library.Version}");
+                }
             }
 
             using (var consumer = new ConsumerBuilder<Ignore, string>(config)
