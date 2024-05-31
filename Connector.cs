@@ -287,6 +287,8 @@ namespace KaffkaNet
 
         public string ProduceMessage(KafkaProducer connectSettings, string topicName, string jsonValueMessage, string keyMessage)
         {
+            var logpath = connectSettings.LogPath;
+
             var config = new ProducerConfig
             {
                 BootstrapServers = connectSettings.BootstrapServers,
@@ -298,14 +300,13 @@ namespace KaffkaNet
             {
                 var pathToLibrd = string.Empty;
                 if (Connector.GetOperatingSystem() == OSPlatform.Windows)
+                {
                     pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
                         $"librdkafka\\{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}\\librdkafka.dll");
-                else if (Connector.GetOperatingSystem() == OSPlatform.Linux)
-                    pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
-                        $"librdkafka/linux/librdkafka.so");
-                Connector.Log(LogPath, $"librdkafka is not loaded. Trying to load {pathToLibrd}");
-                Library.Load(pathToLibrd);
-                Connector.Log(LogPath, $"Using librdkafka version: {Library.Version}");
+                    Connector.Log(logpath, $"librdkafka is not loaded. Trying to load {pathToLibrd}");
+                    Library.Load(pathToLibrd);
+                    Connector.Log(logpath, $"Using librdkafka version: {Library.Version}");
+                }
             }
             using (var p = new ProducerBuilder<string, string>(config).Build())
             {
