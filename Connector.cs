@@ -271,4 +271,58 @@ namespace KaffkaNet
             throw new Exception("Cannot determine operating system!");
         }
     }
+
+    public class KafkaProducer
+    {
+        public string BootstrapServers;
+        public string UserName;
+        public string Password;
+        public string LogPath;
+
+        public KafkaProducer(string bootstrapServers, string userName, string password, string logPath)
+        {
+            this.BootstrapServers = bootstrapServers;
+            this.UserName = userName;
+            this.Password = password;
+            this.LogPath = logPath;
+        }
+
+        public string ProduceMessage(KafkaProducer connectSettings, string topicName, string jsonValueMessage, string keyMessage)
+        {
+            var config = new ProducerConfig
+            {
+                BootstrapServers = connectSettings.BootstrapServers,
+                MessageMaxBytes = 1000000000,
+                ReceiveMessageMaxBytes = 1850000000,
+                SecurityProtocol = SecurityProtocol.Plaintext
+            };
+            if (!Library.IsLoaded)
+            {
+                var pathToLibrd = string.Empty;
+                if (Connector.GetOperatingSystem() == OSPlatform.Windows)
+                    pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                        $"librdkafka\\{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}\\librdkafka.dll");
+                else if (Connector.GetOperatingSystem() == OSPlatform.Linux)
+                    pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                        $"librdkafka/linux/librdkafka.so");
+                Connector.Log(LogPath, $"librdkafka is not loaded. Trying to load {pathToLibrd}");
+                Library.Load(pathToLibrd);
+                Connector.Log(LogPath, $"Using librdkafka version: {Library.Version}");
+            }
+            using (var p = new ProducerBuilder<string, string>(config).Build())
+            {
+                try
+                {
+                    var dr = p.ProduceAsync(topicName, new Message<string, string> { Key = keyMessage, Value = jsonValueMessage });
+                    Connector.Log(LogPath, $"Delivered '{dr.Result.Message}' to '{dr.Result.TopicPartitionOffset}'");
+                }
+                catch (ProduceException<Null, string> e)
+                {
+                    return e.Error.Reason;
+                }
+            }
+
+            return string.Empty;
+        } 
+    }
 }
