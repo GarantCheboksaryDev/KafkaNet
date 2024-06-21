@@ -9,24 +9,40 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace KaffkaNet
+namespace KafkaNet
 {
-    public class ResponseMessages
+    public class Messages
     {
         public string MessageId;
         public DateTime Created;
         public string Value;
         public string Key;
 
-        public ResponseMessages()
+        public Messages()
         {
         }
 
-        public ResponseMessages(string messageId, DateTime created, string value)
+        public Messages(string messageId, DateTime created, string value)
         {
             this.MessageId = messageId;
             this.Created = created;
             this.Value = value;
+        }
+    }
+
+    public class Response
+    {
+        public List<Messages> Messages;
+        public string Error;
+
+        public Response()
+        {
+        }
+
+        public Response(List<Messages> messages, string error)
+        {
+            this.Messages = messages;
+            this.Error = error;
         }
     }
 
@@ -36,15 +52,13 @@ namespace KaffkaNet
         public string UserName;
         public string Password;
         public string ConsumerGroupId;
-        public string LogPath;
 
-        public Connector(string bootstrapServers, string userName, string password, string consumerGroupId, string logPath)
+        public Connector(string bootstrapServers, string userName, string password, string consumerGroupId)
         {
             this.BootstrapServers = bootstrapServers;
             this.UserName = userName;
             this.Password = password;
             this.ConsumerGroupId = consumerGroupId;
-            this.LogPath = logPath;
         }
 
         /// <summary>
@@ -53,33 +67,13 @@ namespace KaffkaNet
         /// <param name="connectSettings">Настройки подключения.</param>
         /// <param name="topic">Наименование топика.</param>
         /// <returns>Структурированный ответ.</returns>
-        public List<ResponseMessages> ReadMessagesFromTopic(Connector connectSettings, string topic)
+        public Response ReadMessagesFromTopic(Connector connectSettings, string topic)
         {
-            var logpath = connectSettings.LogPath;
+            var response = new Response();
 
-            List<ResponseMessages> messagesResponse = new List<ResponseMessages>();
+            var config = CreateConsumerConfig(connectSettings);
 
-            var prefix = string.Format("ReadMessagesFromTopic. Topic: {0}. ", topic);
-
-            Log(logpath, string.Format("{0}Старт процесса.", prefix));
-
-            var config = new ConsumerConfig
-            {
-                GroupId = connectSettings.ConsumerGroupId,
-                BootstrapServers = connectSettings.BootstrapServers,
-                //SaslUsername = connectSettings.UserName,
-                //SaslPassword = connectSettings.Password,
-                //SaslMechanism = SaslMechanism,
-                FetchMaxBytes = 1800000000,
-                MessageMaxBytes = 1000000000,
-                ReceiveMessageMaxBytes = 1850000000,
-                SecurityProtocol = SecurityProtocol.Plaintext,
-                AutoOffsetReset = AutoOffsetReset.Earliest,
-                MaxPollIntervalMs = 10000,
-                SessionTimeoutMs = 10000,
-                EnableAutoCommit = true,
-                EnableAutoOffsetStore = false
-            };
+            List<Messages> messagesResponse = new List<Messages>();
 
             if (!Library.IsLoaded)
             {
@@ -88,16 +82,13 @@ namespace KaffkaNet
                 {
                     pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
                         $"librdkafka\\{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}\\librdkafka.dll");
-                    Log(logpath, $"librdkafka is not loaded. Trying to load {pathToLibrd}");
                     Library.Load(pathToLibrd);
-                    Log(logpath, $"Using librdkafka version: {Library.Version}");
                 }
             }
 
             using (var consumer = new ConsumerBuilder<string, string>(config)
                 .SetErrorHandler((_, e) =>
                 {
-                    Log(logpath, string.Format("{0}Ошибка подключения: {1}", prefix, e.Reason));
                     return;
                 }
                 )
@@ -118,43 +109,43 @@ namespace KaffkaNet
                         {
                             try
                             {
-                                Log(logpath, string.Format("{0}Обработка сообщения: {1}.", prefix, cr.Offset.Value));
-
-                                ResponseMessages messageResponse = new ResponseMessages();
+                                Messages messageResponse = new Messages();
                                 messageResponse.Created = cr.Message.Timestamp.UtcDateTime;
                                 messageResponse.MessageId = cr.Offset.Value.ToString();
                                 messageResponse.Value = cr.Message.Value;
                                 messageResponse.Key = cr.Message.Key != null ? cr.Message.Key.ToString() : string.Empty;
 
-                                Log(logpath, string.Format("{0}Сообщение с Id: {1} успешно обработано.", prefix, cr.Offset.Value));
-
                                 consumer.StoreOffset(cr);
 
                                 messagesResponse.Add(messageResponse);
                             }
-                            catch (ConsumeException ex)
+                            catch (Exception)
                             {
-                                Log(logpath, string.Format("{0}Во время обработки сообщения с Id: {1} произошла ошибка {2}.", prefix, cr.Offset.Value, ex.Error));
+
                             }
 
                         }
                         else
                         {
-                            Log(logpath, string.Format("{0}Нет доступных сообщений.", prefix));
                             consumer.Close();
                             break;
                         }
                     }
                 }
-                catch (OperationCanceledException ex)
+                catch (Exception ex)
                 {
-                    Log(logpath, string.Format("{0}При обработке возникла ошибка: {1}.", prefix, ex));
-                }
+                    var error = "Во время обработки сообщений произошла ошибка " + ex;
+                    response.Error = error;
+                    response.Messages = messagesResponse;
 
-                Log(logpath, string.Format("{0}Конец процесса.", prefix));
+                    return response;
+                }
             }
 
-            return messagesResponse;
+            response.Error = string.Empty;
+            response.Messages = messagesResponse;
+
+            return response;
         }
 
         /// <summary>
@@ -166,21 +157,8 @@ namespace KaffkaNet
         public bool CheckConnection(Connector connectSettings, string topic)
         {
             var connect = true;
-            var logpath = connectSettings.LogPath;
 
-            var config = new ConsumerConfig
-            {
-                GroupId = connectSettings.ConsumerGroupId,
-                BootstrapServers = connectSettings.BootstrapServers,
-                FetchMaxBytes = 1800000000,
-                MessageMaxBytes = 1000000000,
-                ReceiveMessageMaxBytes = 1850000000,
-                SecurityProtocol = SecurityProtocol.Plaintext,
-                AutoOffsetReset = AutoOffsetReset.Earliest,
-                EnableAutoOffsetStore = false,
-                MaxPollIntervalMs = 10000,
-                SessionTimeoutMs = 10000
-            };
+            var config = CreateConsumerConfig(connectSettings);
 
             if (!Library.IsLoaded)
             {
@@ -189,9 +167,7 @@ namespace KaffkaNet
                 {
                     pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
                         $"librdkafka\\{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}\\librdkafka.dll");
-                    Log(logpath, $"librdkafka is not loaded. Trying to load {pathToLibrd}");
                     Library.Load(pathToLibrd);
-                    Log(logpath, $"Using librdkafka version: {Library.Version}");
                 }
             }
 
@@ -215,38 +191,26 @@ namespace KaffkaNet
         }
 
         /// <summary>
-        /// Записать в лог файл сообщение.
+        /// Создать конфиг Consumer.
         /// </summary>
-        /// <param name="message">Сообщение.</param>
-        public static void Log(string logPath, string message)
+        /// <param name="connectSettings">Параметры подключения.</param>
+        /// <returns>Конфиг Consumer.</returns>
+        public ConsumerConfig CreateConsumerConfig(Connector connectSettings)
         {
-            var text = string.Format("{0}   ({1})   {2}{3}", DateTime.Now, System.Diagnostics.Process.GetCurrentProcess().Id, message, Environment.NewLine);
-
-            //если в конфиге папка не указана или указана, но папки такой нет, то использовать временную папку
-            if (string.IsNullOrEmpty(logPath) || !System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(logPath)))
+            return new ConsumerConfig
             {
-                logPath = System.IO.Path.GetTempPath();
-            }
-            if (!string.IsNullOrEmpty(logPath) && System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(logPath)))
-            {
-                var serverName = Dns.GetHostName();
-
-                var fileName = string.Format("{0}.KaffkaNet.{1}.log", serverName, DateTime.Today.ToShortDateString());
-
-                var path = System.IO.Path.Combine(logPath, fileName);
-
-                try
-                {
-                    if (!System.IO.File.Exists(path))
-                        System.IO.File.WriteAllText(path, text);
-                    else
-                        System.IO.File.AppendAllText(path, text);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(string.Format("Log error: {0}", ex));
-                }
-            }
+                GroupId = connectSettings.ConsumerGroupId,
+                BootstrapServers = connectSettings.BootstrapServers,
+                FetchMaxBytes = 1800000000,
+                MessageMaxBytes = 1000000000,
+                ReceiveMessageMaxBytes = 1850000000,
+                SecurityProtocol = SecurityProtocol.Plaintext,
+                AutoOffsetReset = AutoOffsetReset.Earliest,
+                MaxPollIntervalMs = 10000,
+                SessionTimeoutMs = 10000,
+                EnableAutoCommit = true,
+                EnableAutoOffsetStore = false
+            };
         }
 
         public static OSPlatform GetOperatingSystem()
@@ -287,7 +251,6 @@ namespace KaffkaNet
 
         public string ProduceMessage(KafkaProducer connectSettings, string topicName, string jsonValueMessage, string keyMessage)
         {
-            var logpath = connectSettings.LogPath;
 
             var config = new ProducerConfig
             {
@@ -303,9 +266,7 @@ namespace KaffkaNet
                 {
                     pathToLibrd = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
                         $"librdkafka\\{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}\\librdkafka.dll");
-                    Connector.Log(logpath, $"librdkafka is not loaded. Trying to load {pathToLibrd}");
                     Library.Load(pathToLibrd);
-                    Connector.Log(logpath, $"Using librdkafka version: {Library.Version}");
                 }
             }
             using (var p = new ProducerBuilder<string, string>(config).Build())
@@ -313,7 +274,6 @@ namespace KaffkaNet
                 try
                 {
                     var dr = p.ProduceAsync(topicName, new Message<string, string> { Key = keyMessage, Value = jsonValueMessage });
-                    Connector.Log(LogPath, $"Delivered '{dr.Result.Message}' to '{dr.Result.TopicPartitionOffset}'");
                 }
                 catch (ProduceException<Null, string> e)
                 {
